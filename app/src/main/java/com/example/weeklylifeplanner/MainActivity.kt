@@ -61,8 +61,8 @@ private fun generateWeek(p: Preferences, seed: Int = 0): List<DayPlan> {
             add(12*60, 13*60, "Lunch", "🍽️")
         }
         if (index in workDays) {
-            add(17*60, 18*60, "Sport", "🏃")
-            add(18*60, 19*60, "Personal time", "💗")
+            add(17*60+30, 18*60+30, "Sport", "🏃")
+            add(18*60+30, 19*60, "Personal time", "💗")
             add(19*60, 19*60+45, "Dinner", "🍴")
             add(19*60+45, 20*60+15, "Study / learning", "📚")
             add(20*60+15, 22*60+30, if ((index + seed) % 2 == 0) "Movie & relax" else "Free time", if ((index + seed) % 2 == 0) "🎬" else "💜")
@@ -99,8 +99,9 @@ class MainActivity : ComponentActivity() {
 private fun PlannerApp() {
     var tab by remember { mutableStateOf(0) }
     var selectedDay by remember { mutableIntStateOf(0) }
+    var planSeed by remember { mutableIntStateOf(0) }
     var prefs by remember { mutableStateOf(Preferences()) }
-    val week = remember(prefs) { generateWeek(prefs) }
+    val week = remember(prefs, planSeed) {generateWeek(prefs, planSeed)}
     val blue = Color(0xFF3F55F5)
     MaterialTheme(colorScheme = lightColorScheme(primary = blue, secondary = Color(0xFF25B6E8))) {
         Scaffold(
