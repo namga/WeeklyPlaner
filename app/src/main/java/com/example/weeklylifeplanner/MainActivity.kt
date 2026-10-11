@@ -3,6 +3,7 @@ package com.example.weeklylifeplanner
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -36,11 +37,26 @@ private fun plan(p:Prefs, seed:Int):List<List<ActivityBlock>> = days.mapIndexed 
     else {add(480,540,"Coffee & slow morning","☕");add(540,600,if(i==5)"Outdoor activity" else "Study",if(i==5)"🌲" else "📚");add(600,660,if(i==5)"Shopping" else "Outdoor activity",if(i==5)"🛍️" else "🌳");add(660,720,"Personal time","💗");add(720,780,"Lunch","🍽️");add(780,840,if(i==5)"Sport" else "Study",if(i==5)"🏃" else "📚");add(840,900,"Personal time","💗");add(900,960,"Movie / outdoors","🎬");add(960,1020,"Personal time","💗");add(1020,1080,"Sport / walk","🏃");add(1080,1140,"Free time","💜");add(1140,1200,"Dinner","🍴");add(1200,1260,"Social / family","👥");add(1260,1350,"Relax & personal time","💗");add(1350,p.sleepStart,"Wind down","🌙")}
     out+=ActivityBlock("$i-sleep-late",p.sleepStart,1440,"Sleep","🌙"); val end=(p.sleepStart+p.sleepHours*60)%1440; if(end>0)out.add(ActivityBlock("$i-sleep-early",0,end,"Sleep","🌙")); out.sortedBy{it.start}
 }
-class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{PlannerApp()}}}
+class MainActivity:ComponentActivity(){
+    override fun onCreate(savedInstanceState:Bundle?){
+        super.onCreate(savedInstanceState)
+        val store=getSharedPreferences("weekly_life_planner", MODE_PRIVATE)
+        setContent{PlannerApp(store)}
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable private fun PlannerApp(){
- var tab by remember{mutableIntStateOf(0)}; var day by remember{mutableIntStateOf(0)}; var prefs by remember{mutableStateOf(Prefs())}; var seed by remember{mutableIntStateOf(0)}; val done= remember{ mutableStateListOf<String>() }; val week=remember(prefs,seed){plan(prefs,seed)}; val accent=palettes[prefs.theme]?:palettes.getValue("Fresh mint")
+@Composable private fun PlannerApp(store: android.content.SharedPreferences){
+ var tab by remember{mutableIntStateOf(0)}; var day by remember{mutableIntStateOf(0)}
+ var prefs by remember{mutableStateOf(Prefs(
+   workStart=store.getInt("workStart",480), sleepStart=store.getInt("sleepStart",1380), sleepHours=store.getInt("sleepHours",8),
+   weekendWork=store.getBoolean("weekendWork",false), lifestyle=store.getString("lifestyle","Balanced")?:"Balanced",
+   theme=store.getString("theme","Fresh mint")?:"Fresh mint", view=store.getString("view","Day agenda")?:"Day agenda", tracking=store.getBoolean("tracking",true)
+ ))}; var seed by remember{mutableIntStateOf(store.getInt("seed",0))}; val done= remember{ mutableStateListOf<String>().apply { addAll(store.getStringSet("done", emptySet()) ?: emptySet()) } }
+ LaunchedEffect(prefs){store.edit().putInt("workStart",prefs.workStart).putInt("sleepStart",prefs.sleepStart).putInt("sleepHours",prefs.sleepHours).putBoolean("weekendWork",prefs.weekendWork).putString("lifestyle",prefs.lifestyle).putString("theme",prefs.theme).putString("view",prefs.view).putBoolean("tracking",prefs.tracking).apply()}
+ LaunchedEffect(done.size,done.toList()){store.edit().putStringSet("done",done.toSet()).apply()}
+ LaunchedEffect(seed){store.edit().putInt("seed",seed).apply()}
+ val week=remember(prefs,seed){plan(prefs,seed)}; val accent=palettes[prefs.theme]?:palettes.getValue("Fresh mint")
  MaterialTheme(colorScheme=lightColorScheme(primary=accent,secondary=Color(0xFFFFB454),background=Color(0xFFF5F8FC),surface=Color.White)){
  Scaffold(containerColor=Color(0xFFF5F8FC),topBar={TopAppBar(title={Column{Text("Weekly Life Planner",fontWeight=FontWeight.Bold);Text("A little balance, every day ✨",fontSize=12.sp,color=Color.Gray)}},actions={IconButton(onClick={tab=2}){Icon(Icons.Default.Settings,null)}})},bottomBar={NavigationBar{NavigationBarItem(selected=tab==0,onClick={tab=0},icon={Icon(Icons.Default.Home,null)},label={Text("Home")});NavigationBarItem(selected=tab==1,onClick={tab=1},icon={Icon(Icons.Default.DateRange,null)},label={Text("My week")});NavigationBarItem(selected=tab==2,onClick={tab=2},icon={Icon(Icons.Default.Palette,null)},label={Text("Settings")})}}){pad->
  when(tab){
@@ -59,7 +75,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
  (7..22).forEach { h -> Row(Modifier.height(58.dp),verticalAlignment=Alignment.Top) { Text("%02d:00".format(h),Modifier.width(54.dp).padding(top=5.dp),fontSize=10.sp,color=Color.Gray); days.indices.forEach { i -> val event=week[i].firstOrNull{it.start/60==h}; Column(Modifier.width(112.dp).fillMaxHeight().padding(end=3.dp,bottom=3.dp).background(Color(0xFFE9EDF4),RoundedCornerShape(6.dp)).padding(3.dp)) { if(event!=null) Text("${event.emoji} ${event.name}",fontSize=10.sp,color=accent,maxLines=3) } } } }
  }
  }else if(prefs.view=="Month calendar"){
- Column(verticalArrangement=Arrangement.spacedBy(6.dp)) { Row { listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun").forEach { Text(it,Modifier.weight(1f),fontSize=10.sp,fontWeight=FontWeight.Bold,color=accent) } }; (1..35).chunked(7).forEachIndexed { row, nums -> Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) { nums.forEachIndexed { col, n -> val idx=(row*7+col)%7; Card(onClick={ day = idx }, modifier=Modifier.weight(1f).height(76.dp), shape=RoundedCornerShape(10.dp), colors=CardDefaults.cardColors(containerColor=if(n==day+1)accent.copy(alpha=.15f) else Color.White)) { Column(Modifier.padding(5.dp)) { Text(if(n<=31)n.toString() else "",fontSize=11.sp,fontWeight=FontWeight.Bold); if(n<=31)Text(week[idx].firstOrNull{it.start>=420&&it.start<1380}?.emoji?:"",fontSize=15.sp); if(n<=31&&prefs.tracking)Text("${week[idx].count{it.id in done} }✓",fontSize=9.sp,color=accent) } } } } } }
+ Column(verticalArrangement=Arrangement.spacedBy(6.dp)) { Row { listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun").forEach { Text(it,Modifier.weight(1f),fontSize=10.sp,fontWeight=FontWeight.Bold,color=accent) } }; (1..35).chunked(7).forEachIndexed { row, nums -> Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) { nums.forEachIndexed { col, n -> val idx=(row*7+col)%7; Card(modifier=Modifier.weight(1f).height(76.dp), shape=RoundedCornerShape(10.dp), colors=CardDefaults.cardColors(containerColor=if(n==day+1)accent.copy(alpha=.15f) else Color.White)) { Column(Modifier.fillMaxSize().clickable { day = idx }.padding(5.dp)) { Text(if(n<=31)n.toString() else "",fontSize=11.sp,fontWeight=FontWeight.Bold); if(n<=31)Text(week[idx].firstOrNull{it.start>=420&&it.start<1380}?.emoji?:"",fontSize=15.sp); if(n<=31&&prefs.tracking)Text("${week[idx].count{it.id in done} }✓",fontSize=9.sp,color=accent) } } } } } }
  }else{LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(bottom=12.dp)){items(week[day]){event->val checked=event.id in done;Card(shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=if(checked)accent.copy(alpha=.08f) else Color.White)){Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){if(prefs.tracking)Checkbox(checked=checked,onCheckedChange={if(it){if(event.id !in done)done.add(event.id)}else done.remove(event.id)},colors=CheckboxDefaults.colors(checkedColor=accent));Box(Modifier.size(40.dp).background(accent.copy(alpha=.10f),RoundedCornerShape(13.dp)),contentAlignment=Alignment.Center){Text(event.emoji,fontSize=21.sp)};Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(event.name,fontWeight=FontWeight.SemiBold,color=if(checked)Color.Gray else Color(0xFF233047));Text("${event.start.clock()} – ${event.end.clock()}",fontSize=12.sp,color=Color.Gray)};if(checked)Icon(Icons.Default.CheckCircle,null,tint=accent)}}}}}
  }
  else->LazyColumn(Modifier.padding(pad).fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(13.dp)){
