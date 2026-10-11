@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -158,9 +159,17 @@ private fun PlannerApp() {
                 }
                 1 -> Column(Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp)) {
                     Text("Weekly schedule", fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        dayNames.forEachIndexed { i, name ->
-                            FilterChip(selected = selectedDay == i, onClick = { selectedDay = i }, label = { Text(name.take(3)) })
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp)
+                    ) {
+                        items(dayNames.size) { i ->
+                            FilterChip(
+                                selected = selectedDay == i,
+                                onClick = { selectedDay = i },
+                                label = { Text(dayNames[i].take(3), maxLines = 1) }
+                            )
                         }
                     }
                     Text(dayNames[selectedDay], fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 10.dp))
