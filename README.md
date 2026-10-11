@@ -40,3 +40,12 @@ Then visit `http://localhost:8080`.
 
 ## Notes
 This is a functional starter, not a production release. App signing, automated tests, localization files beyond English, and persistent cloud sync are not configured. Preferences are editable in both clients; the generated week is deterministic for the selected settings.
+
+## Version 2 improvements
+- **Appearance:** five bright accent themes (Fresh mint, Sunny peach, Sky blue, Lavender, Rose pink).
+- **Schedule display:** switch between a day-by-day agenda and a week calendar with hourly time markers.
+- **Activity tracking:** optional completion checkboxes on each activity, plus a completed count on the home screen.
+- **Refreshed UI:** softer cards, rounded corners, friendly emoji markers and more spacious layouts in Android and PWA.
+- Existing Android launcher icons and GitHub Actions debug APK workflow are retained.
+
+Note: This source package has been ZIP-integrity checked. Run the included GitHub Actions workflow to validate the Android build and produce the APK.

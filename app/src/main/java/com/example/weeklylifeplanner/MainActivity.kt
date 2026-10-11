@@ -4,10 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,227 +21,49 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private data class ActivityBlock(val start: Int, val end: Int, val name: String, val emoji: String) {
-    fun time(): String = "${start.toClock()}–${end.toClock()}"
+private data class ActivityBlock(val id:String, val start:Int, val end:Int, val name:String, val emoji:String)
+private fun Int.clock() = "%02d:%02d".format((this/60)%24, this%60)
+private val days = listOf("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+private data class Prefs(val workStart:Int=480,val sleepStart:Int=1380,val sleepHours:Int=8,val weekendWork:Boolean=false,val lifestyle:String="Balanced",val theme:String="Fresh mint",val view:String="Day agenda",val tracking:Boolean=true)
+private val palettes = mapOf("Fresh mint" to Color(0xFF168C75), "Sunny peach" to Color(0xFFE87945), "Sky blue" to Color(0xFF3979D6), "Lavender" to Color(0xFF8061D9), "Rose pink" to Color(0xFFD84F83))
+private fun plan(p:Prefs, seed:Int):List<List<ActivityBlock>> = days.mapIndexed { i, day ->
+    val out= mutableListOf<ActivityBlock>(); fun add(s:Int,e:Int,n:String,em:String){if(s<e)out+=ActivityBlock("$i-$s-$n",s,e,n,em)}
+    add(420,450,"Wake up & breakfast","☀️"); add(450,480,"Morning routine","🌿")
+    if(i<5 || p.weekendWork){val w=p.workStart; add(w,w+240,"Work","💼");add(w+240,w+300,"Lunch","🍽️");add(w+300,w+540,"Work","💼");add(w+540,w+570,"Coffee & reset","☕");add(1020,1080,"Sport","🏃");add(1080,1140,"Personal time","💗");add(1140,1185,"Dinner","🍴");add(1185,1215,"Study / learning","📚");add(1215,1350,if((i+seed)%2==0)"Movie & relax" else "Free time",if((i+seed)%2==0)"🎬" else "💜");add(1350,p.sleepStart,"Wind down","🌙")}
+    else {add(480,540,"Coffee & slow morning","☕");add(540,600,if(i==5)"Outdoor activity" else "Study",if(i==5)"🌲" else "📚");add(600,660,if(i==5)"Shopping" else "Outdoor activity",if(i==5)"🛍️" else "🌳");add(660,720,"Personal time","💗");add(720,780,"Lunch","🍽️");add(780,840,if(i==5)"Sport" else "Study",if(i==5)"🏃" else "📚");add(840,900,"Personal time","💗");add(900,960,"Movie / outdoors","🎬");add(960,1020,"Personal time","💗");add(1020,1080,"Sport / walk","🏃");add(1080,1140,"Free time","💜");add(1140,1200,"Dinner","🍴");add(1200,1260,"Social / family","👥");add(1260,1350,"Relax & personal time","💗");add(1350,p.sleepStart,"Wind down","🌙")}
+    out+=ActivityBlock("$i-sleep-late",p.sleepStart,1440,"Sleep","🌙"); val end=(p.sleepStart+p.sleepHours*60)%1440; if(end>0)out.add(ActivityBlock("$i-sleep-early",0,end,"Sleep","🌙")); out.sortedBy{it.start}
 }
-private fun Int.toClock() = "%02d:%02d".format(this / 60, this % 60)
-private data class DayPlan(val day: String, val blocks: List<ActivityBlock>)
-private data class Preferences(
-    val workStart: Int = 8 * 60,
-    val sleepStart: Int = 23 * 60,
-    val sleepHours: Int = 8,
-    val weekendWork: Boolean = false,
-    val lifestyle: String = "Balanced",
-    val language: String = "en"
-)
-
-private val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-
-private fun generateWeek(p: Preferences, seed: Int = 0): List<DayPlan> {
-    val sleepStart = p.sleepStart
-    val sleepEnd = (sleepStart + p.sleepHours * 60) % 1440
-    val workDays = if (p.weekendWork) 0..6 else 0..4
-    return dayNames.mapIndexed { index, day ->
-        val blocks = mutableListOf<ActivityBlock>()
-        fun add(start: Int, end: Int, name: String, emoji: String) {
-            if (start < end) blocks += ActivityBlock(start, end, name, emoji)
-        }
-        // Daytime schedule is 07:00–23:00 for the requested default sleep window.
-        add(7*60, 7*60+30, "Wake up & breakfast", "☀️")
-        add(7*60+30, 8*60, "Morning routine", "🌿")
-        if (index in workDays) {
-            val ws = p.workStart
-            add(ws, ws+4*60, "Work", "💼")
-            add(ws+4*60, ws+5*60, "Lunch", "🍽️")
-            add(ws+5*60, ws+9*60, "Work", "💼")
-            add(ws+9*60, ws+9*60+30, "Coffee & reset", "☕")
-        } else {
-            add(8*60, 9*60, "Coffee & slow morning", "☕")
-            add(9*60, 10*60, if (index == 5) "Outdoor activity" else "Study", if (index == 5) "🌲" else "📚")
-            add(10*60, 11*60, if (index == 5) "Shopping" else "Outdoor activity", if (index == 5) "🛍️" else "🌳")
-            add(11*60, 12*60, "Personal time", "💗")
-            add(12*60, 13*60, "Lunch", "🍽️")
-        }
-        if (index in workDays) {
-            add(17*60+30, 18*60+30, "Sport", "🏃")
-            add(18*60+30, 19*60, "Personal time", "💗")
-            add(19*60, 19*60+45, "Dinner", "🍴")
-            add(19*60+45, 20*60+15, "Study / learning", "📚")
-            add(20*60+15, 22*60+30, if ((index + seed) % 2 == 0) "Movie & relax" else "Free time", if ((index + seed) % 2 == 0) "🎬" else "💜")
-            add(22*60+30, 23*60, "Wind down", "🌙")
-        } else {
-            add(13*60, 14*60, if (index == 5) "Sport" else "Study", if (index == 5) "🏃" else "📚")
-            add(14*60, 15*60, if (index == 5) "Personal time" else "Shopping", if (index == 5) "💗" else "🛍️")
-            add(15*60, 16*60, if (index == 5) "Movie" else "Outdoor activity", if (index == 5) "🎬" else "🌳")
-            add(16*60, 17*60, "Personal time", "💗")
-            add(17*60, 18*60, "Sport / walk", "🏃")
-            add(18*60, 19*60, "Free time", "💜")
-            add(19*60, 20*60, "Dinner", "🍴")
-            add(20*60, 21*60, if (index == 5) "Movie night" else "Social / family", if (index == 5) "🎬" else "👥")
-            add(21*60, 22*60+30, "Relax & personal time", "💗")
-            add(22*60+30, 23*60, "Wind down", "🌙")
-        }
-        // Keep schedule blocks sorted; sleep is represented as an overnight block on each day.
-        val daytime = blocks.sortedBy { it.start }.toMutableList()
-        daytime += ActivityBlock(sleepStart, 1440, "Sleep", "🌙")
-        if (sleepEnd > 0) daytime.add(0, ActivityBlock(0, sleepEnd, "Sleep", "🌙"))
-        DayPlan(day, daytime)
-    }
-}
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent { PlannerApp() }
-    }
-}
+class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{PlannerApp()}}}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PlannerApp() {
-    var tab by remember { mutableStateOf(0) }
-    var selectedDay by remember { mutableIntStateOf(0) }
-    var planSeed by remember { mutableIntStateOf(0) }
-    var prefs by remember { mutableStateOf(Preferences()) }
-    val week = remember(prefs, planSeed) {generateWeek(prefs, planSeed)}
-    val blue = Color(0xFF3F55F5)
-    MaterialTheme(colorScheme = lightColorScheme(primary = blue, secondary = Color(0xFF25B6E8))) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Column {
-                        Text("Weekly Life Planner", fontWeight = FontWeight.Bold)
-                        Text("Randomize your week, balance your life", fontSize = 12.sp, color = Color.Gray)
-                    } },
-                    actions = { IconButton(onClick = { tab = 2 }) { Icon(Icons.Default.Settings, "Settings") } }
-                )
-            },
-            bottomBar = {
-                NavigationBar {
-                    NavigationBarItem(selected = tab == 0, onClick = { tab = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
-                    NavigationBarItem(selected = tab == 1, onClick = { tab = 1 }, icon = { Icon(Icons.Default.DateRange, null) }, label = { Text("Weekly") })
-                    NavigationBarItem(selected = tab == 2, onClick = { tab = 2 }, icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Settings") })
-                }
-            }
-        ) { padding ->
-            when (tab) {
-                0 -> LazyColumn(Modifier.padding(padding).fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE7F6FF)), shape = RoundedCornerShape(24.dp)) {
-                            Column(Modifier.padding(20.dp)) {
-                                Text("Good morning!", fontSize = 23.sp, fontWeight = FontWeight.Bold)
-                                Text("Let's make this week amazing!")
-                                Spacer(Modifier.height(16.dp))
-                                Button(onClick = { planSeed++; selectedDay = 0; tab = 1 }, modifier = Modifier.fillMaxWidth()) {
-                                    Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Generate New Plan")
-                                }
-                            }
-                        }
-                    }
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            SummaryCard("Work", if (prefs.weekendWork) "56h" else "40h", Modifier.weight(1f))
-                            SummaryCard("Sleep", "${prefs.sleepHours * 7}h", Modifier.weight(1f))
-                            SummaryCard("Free time", "Balanced", Modifier.weight(1f))
-                        }
-                    }
-                    item { Text("This week", fontSize = 20.sp, fontWeight = FontWeight.Bold) }
-                    items(week) { plan ->
-                        Card(onClick = { selectedDay = dayNames.indexOf(plan.day); tab = 1 }) {
-                            Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(plan.day, fontWeight = FontWeight.SemiBold)
-                                    Text(plan.blocks.filter { it.start >= 7*60 && it.start < 23*60 }.take(3).joinToString(" · ") { it.name }, fontSize = 12.sp, color = Color.Gray)
-                                }
-                                Icon(Icons.Default.ChevronRight, null)
-                            }
-                        }
-                    }
-                }
-                1 -> Column(Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp)) {
-                    Text("Weekly schedule", fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp)
-                    ) {
-                        items(dayNames.size) { i ->
-                            FilterChip(
-                                selected = selectedDay == i,
-                                onClick = { selectedDay = i },
-                                label = { Text(dayNames[i].take(3), maxLines = 1) }
-                            )
-                        }
-                    }
-                    Text(dayNames[selectedDay], fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 10.dp))
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(week[selectedDay].blocks) { block ->
-                            Row(Modifier.fillMaxWidth().background(Color(0xFFF3F6FC), RoundedCornerShape(12.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(block.emoji, fontSize = 22.sp)
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(block.name, fontWeight = FontWeight.Medium)
-                                    Text(block.time(), fontSize = 12.sp, color = Color.Gray)
-                                }
-                            }
-                        }
-                    }
-                }
-                else -> LazyColumn(Modifier.padding(padding).fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item { Text("Preferences", fontSize = 22.sp, fontWeight = FontWeight.Bold) }
-                    item {
-                        PreferenceRow("Work start", prefs.workStart.toClock()) {
-                            prefs = prefs.copy(workStart = if (prefs.workStart == 8*60) 9*60 else 8*60)
-                        }
-                    }
-                    item {
-                        PreferenceRow("Sleep start", prefs.sleepStart.toClock()) {
-                            prefs = prefs.copy(sleepStart = if (prefs.sleepStart == 23*60) 22*60 else 23*60)
-                        }
-                    }
-                    item {
-                        PreferenceRow("Sleep duration", "${prefs.sleepHours} hours") {
-                            prefs = prefs.copy(sleepHours = if (prefs.sleepHours == 8) 7 else 8)
-                        }
-                    }
-                    item {
-                        PreferenceRow("Weekend work", if (prefs.weekendWork) "On" else "Off") {
-                            prefs = prefs.copy(weekendWork = !prefs.weekendWork)
-                        }
-                    }
-                    item {
-                        PreferenceRow("Preferred lifestyle", prefs.lifestyle) {
-                            prefs = prefs.copy(lifestyle = if (prefs.lifestyle == "Balanced") "Active" else "Balanced")
-                        }
-                    }
-                    item { PreferenceRow("Language", prefs.language) { prefs = prefs.copy(language = if (prefs.language == "en") "vi" else "en") } }
-                    item {
-                        Text("Tap a row to cycle its setting. The week regenerates automatically; default is English, balanced, weekdays only.", color = Color.Gray, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-    }
+@Composable private fun PlannerApp(){
+ var tab by remember{mutableIntStateOf(0)}; var day by remember{mutableIntStateOf(0)}; var prefs by remember{mutableStateOf(Prefs())}; var seed by remember{mutableIntStateOf(0)}; val done= remember{ mutableStateListOf<String>() }; val week=remember(prefs,seed){plan(prefs,seed)}; val accent=palettes[prefs.theme]?:palettes.getValue("Fresh mint")
+ MaterialTheme(colorScheme=lightColorScheme(primary=accent,secondary=Color(0xFFFFB454),background=Color(0xFFF5F8FC),surface=Color.White)){
+ Scaffold(containerColor=Color(0xFFF5F8FC),topBar={TopAppBar(title={Column{Text("Weekly Life Planner",fontWeight=FontWeight.Bold);Text("A little balance, every day ✨",fontSize=12.sp,color=Color.Gray)}},actions={IconButton(onClick={tab=2}){Icon(Icons.Default.Settings,null)}})},bottomBar={NavigationBar{NavigationBarItem(selected=tab==0,onClick={tab=0},icon={Icon(Icons.Default.Home,null)},label={Text("Home")});NavigationBarItem(selected=tab==1,onClick={tab=1},icon={Icon(Icons.Default.DateRange,null)},label={Text("My week")});NavigationBarItem(selected=tab==2,onClick={tab=2},icon={Icon(Icons.Default.Palette,null)},label={Text("Settings")})}}){pad->
+ when(tab){
+ 0->LazyColumn(Modifier.padding(pad).fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
+ item{Card(colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.12f)),shape=RoundedCornerShape(28.dp)){Column(Modifier.padding(22.dp)){Text("YOUR WEEK, YOUR WAY",fontSize=11.sp,color=accent,fontWeight=FontWeight.Bold);Text("Make room for what matters.",fontSize=24.sp,fontWeight=FontWeight.Bold);Text("Plan a balanced week with space to work, rest and grow.",color=Color.DarkGray);Spacer(Modifier.height(16.dp));Button(onClick={seed++;day=0;tab=1},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)){Icon(Icons.Default.AutoAwesome,null);Spacer(Modifier.width(8.dp));Text("Generate a fresh week")}}}}
+ item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){StatCard("💼 Work",if(prefs.weekendWork)"56h" else "40h",Modifier.weight(1f),accent);StatCard("🌙 Sleep","${prefs.sleepHours*7}h",Modifier.weight(1f),accent);StatCard("☑️ Done","${done.size}",Modifier.weight(1f),accent)}}
+ item{Text("Coming up this week",fontSize=19.sp,fontWeight=FontWeight.Bold)}
+ items(days.indices.toList()){i->Card(onClick={day=i;tab=1},shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White)){Row(Modifier.fillMaxWidth().padding(15.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(44.dp).background(accent.copy(alpha=.12f),RoundedCornerShape(14.dp)),contentAlignment=Alignment.Center){Text(listOf("🌱","☀️","🌼","🌿","✨","🌈","💗")[i],fontSize=22.sp)};Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(days[i],fontWeight=FontWeight.SemiBold);Text(week[i].filter{it.start>=420&&it.start<1380}.take(2).joinToString(" · "){it.name},fontSize=12.sp,color=Color.Gray)};Icon(Icons.Default.ChevronRight,null,tint=accent)}}}
+ }
+ 1->Column(Modifier.padding(pad).fillMaxSize().padding(horizontal=14.dp)){
+ Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){days.forEachIndexed{i,d->FilterChip(selected=day==i,onClick={day=i},label={Text(d.take(3))})}}
+ Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(if(prefs.view=="Week calendar")"Week at a glance" else days[day],fontSize=22.sp,fontWeight=FontWeight.Bold);Text("${week[day].count{it.name=="Work"}*4} hours focused work",fontSize=12.sp,color=Color.Gray)};if(prefs.tracking)Text("${week[day].count{it.id in done}}/${week[day].size} done",color=accent,fontWeight=FontWeight.SemiBold)}
+ if(prefs.view=="Week calendar"){
+ LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items((7..22).toList()){h->Row(verticalAlignment=Alignment.Top){Text("%02d:00".format(h),fontSize=11.sp,color=Color.Gray,modifier=Modifier.width(48.dp).padding(top=8.dp));Column(Modifier.weight(1f).padding(bottom=5.dp)){days.forEachIndexed{i,d->val event=week[i].firstOrNull{it.start/60==h};if(event!=null)Row(Modifier.fillMaxWidth().padding(bottom=3.dp).background(accent.copy(alpha=.11f),RoundedCornerShape(8.dp)).padding(6.dp),verticalAlignment=Alignment.CenterVertically){Text(d.take(2),fontSize=10.sp,fontWeight=FontWeight.Bold,color=accent,modifier=Modifier.width(24.dp));Text("${event.emoji} ${event.name}",fontSize=11.sp,maxLines=1)}}}}}}
+ }else{LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(bottom=12.dp)){items(week[day]){event->val checked=event.id in done;Card(shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=if(checked)accent.copy(alpha=.08f) else Color.White)){Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){if(prefs.tracking)Checkbox(checked=checked,onCheckedChange={if(it){if(event.id !in done)done.add(event.id)}else done.remove(event.id)},colors=CheckboxDefaults.colors(checkedColor=accent));Box(Modifier.size(40.dp).background(accent.copy(alpha=.10f),RoundedCornerShape(13.dp)),contentAlignment=Alignment.Center){Text(event.emoji,fontSize=21.sp)};Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(event.name,fontWeight=FontWeight.SemiBold,color=if(checked)Color.Gray else Color(0xFF233047));Text("${event.start.clock()} – ${event.end.clock()}",fontSize=12.sp,color=Color.Gray)};if(checked)Icon(Icons.Default.CheckCircle,null,tint=accent)}}}}}
+ }
+ else->LazyColumn(Modifier.padding(pad).fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(13.dp)){
+ item{Text("Make it yours ✨",fontSize=24.sp,fontWeight=FontWeight.Bold);Text("Tune the look and feel of your planner.",color=Color.Gray)}
+ item{Card(shape=RoundedCornerShape(22.dp)){Column(Modifier.padding(16.dp)){Text("Color theme",fontWeight=FontWeight.Bold);Spacer(Modifier.height(10.dp));palettes.forEach{(name,color)->Row(Modifier.fillMaxWidth().padding(vertical=3.dp),verticalAlignment=Alignment.CenterVertically){RadioButton(selected=prefs.theme==name,onClick={prefs=prefs.copy(theme=name)});Box(Modifier.size(24.dp).background(color,RoundedCornerShape(8.dp)));Text(name,Modifier.weight(1f).padding(start=10.dp));if(prefs.theme==name)Icon(Icons.Default.Check,null,tint=color)}}}}}
+ item{Card(shape=RoundedCornerShape(22.dp)){Column(Modifier.padding(16.dp)){Text("Schedule display",fontWeight=FontWeight.Bold);listOf("Day agenda","Week calendar").forEach{v->Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){RadioButton(selected=prefs.view==v,onClick={prefs=prefs.copy(view=v)});Column{Text(v,fontWeight=FontWeight.Medium);Text(if(v=="Day agenda")"Simple list of activities" else "Time grid with hourly markers",fontSize=12.sp,color=Color.Gray)}}}}}}
+ item{Card(shape=RoundedCornerShape(22.dp)){Column(Modifier.padding(16.dp)){Text("Activity tracking",fontWeight=FontWeight.Bold);Text("Tick each activity when you finish it.",fontSize=12.sp,color=Color.Gray);Row(verticalAlignment=Alignment.CenterVertically){Text("Show completion checkboxes",Modifier.weight(1f));Switch(checked=prefs.tracking,onCheckedChange={prefs=prefs.copy(tracking=it)})}}}}
+ item{Card(shape=RoundedCornerShape(22.dp)){Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){Text("Your routine",fontWeight=FontWeight.Bold);SettingSelect("Work starts",listOf("07:00" to 420,"08:00" to 480,"09:00" to 540),prefs.workStart){prefs=prefs.copy(workStart=it)};SettingSelect("Sleep starts",listOf("22:00" to 1320,"23:00" to 1380,"23:30" to 1410),prefs.sleepStart){prefs=prefs.copy(sleepStart=it)};SettingSelect("Sleep duration",listOf("7 hours" to 7,"8 hours" to 8,"9 hours" to 9),prefs.sleepHours){prefs=prefs.copy(sleepHours=it)};Row(verticalAlignment=Alignment.CenterVertically){Text("Work on weekends",Modifier.weight(1f));Switch(checked=prefs.weekendWork,onCheckedChange={prefs=prefs.copy(weekendWork=it)})}}}}
+ item{Button(onClick={done.clear();seed++;day=0},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(8.dp));Text("Reset progress & refresh plan")}}
+ }
+ }
+ }}
 }
-
-@Composable
-private fun SummaryCard(title: String, value: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F5FF))) {
-        Column(Modifier.padding(12.dp)) {
-            Text(title, fontSize = 12.sp, color = Color.Gray)
-            Text(value, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun PreferenceRow(title: String, value: String, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, Modifier.weight(1f))
-            Text(value, color = Color(0xFF3F55F5), fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.width(8.dp))
-            Icon(Icons.Default.ChevronRight, null, tint = Color.Gray)
-        }
-    }
-}
+@Composable private fun StatCard(label:String,value:String,modifier:Modifier,accent:Color){Card(modifier=modifier,shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(12.dp)){Text(label,fontSize=12.sp);Text(value,fontSize=20.sp,fontWeight=FontWeight.Bold,color=accent)}}}
+@Composable private fun SettingSelect(title:String,options:List<Pair<String,Int>>,current:Int,onSelect:(Int)->Unit){var expanded by remember{mutableStateOf(false)};Row(verticalAlignment=Alignment.CenterVertically){Text(title,Modifier.weight(1f));Box{TextButton(onClick={expanded=true}){Text(options.firstOrNull{it.second==current}?.first?:current.toString());Icon(Icons.Default.ArrowDropDown,null)};DropdownMenu(expanded=expanded,onDismissRequest={expanded=false}){options.forEach{(label,value)->DropdownMenuItem(text={Text(label)},onClick={ onSelect(value); expanded=false })}}}}}
