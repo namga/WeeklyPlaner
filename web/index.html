@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#3f55f5">
+  <meta name="description" content="Build a balanced weekly routine with Weekly Life Planner.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <title>Weekly Life Planner</title>
+</head>
+<body>
+  <header class="hero">
+    <div class="app-icon">✓</div>
+    <div><p class="eyebrow">YOUR WEEK, IN BALANCE</p><h1>Weekly Life Planner</h1><p>Randomize your week, balance your life.</p></div>
+  </header>
+  <main>
+    <section class="welcome card">
+      <div><p class="eyebrow">A FRESH START</p><h2 id="greeting">Let's make this week amazing!</h2><p>Small steps every day lead to big changes.</p></div>
+      <button id="generate">⤨ Generate New Plan</button>
+    </section>
+    <section class="stats">
+      <article class="stat"><span>💼 Work</span><strong id="workStat">40h</strong></article>
+      <article class="stat"><span>🌙 Sleep</span><strong id="sleepStat">56h</strong></article>
+      <article class="stat"><span>💗 Lifestyle</span><strong id="lifeStat">Balanced</strong></article>
+    </section>
+    <nav class="tabs" aria-label="Main navigation">
+      <button class="tab active" data-tab="week">Weekly schedule</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </nav>
+    <section id="weekView">
+      <div class="day-picker" id="dayPicker"></div>
+      <div class="section-head"><h2 id="dayTitle">Monday</h2><span id="dayMeta">8 hours work</span></div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+    <section id="settingsView" hidden>
+      <h2>Preferences</h2>
+      <form id="settingsForm" class="card settings">
+        <label>Work starts
+          <select id="workStart"><option value="480">08:00</option><option value="540">09:00</option><option value="420">07:00</option></select>
+        </label>
+        <label>Sleep starts
+          <select id="sleepStart"><option value="1380">23:00</option><option value="1320">22:00</option><option value="1410">23:30</option></select>
+        </label>
+        <label>Sleep duration
+          <select id="sleepHours"><option value="8">8 hours</option><option value="7">7 hours</option><option value="9">9 hours</option></select>
+        </label>
+        <label>Weekend work
+          <select id="weekendWork"><option value="off">Off (Sat & Sun)</option><option value="on">On</option></select>
+        </label>
+        <label>Preferred lifestyle
+          <select id="lifestyle"><option>Balanced</option><option>Active</option><option>Relaxed</option></select>
+        </label>
+        <label>Language
+          <select id="language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select>
+        </label>
+        <button type="submit">Save preferences</button>
+      </form>
+    </section>
+  </main>
+  <footer>Weekly Life Planner · Your time, your balance.</footer>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "Weekly Life Planner",
+  "short_name": "Life Planner",
+  "description": "Plan a balanced week with work, rest and activities.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fc",
+  "theme_color": "#3f55f5",
+  "icons": []
+}
