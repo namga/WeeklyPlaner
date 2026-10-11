@@ -32,8 +32,15 @@ jobs:
 
       - name: Check Android project
         run: |
-          test -f android/settings.gradle
-          test -f android/app/build.gradle
+          if [ -f android/settings.gradle ]; then
+            echo "Android project found in android/"
+          elif [ -f settings.gradle ]; then
+            echo "Android project found in repository root"
+          else
+            echo "Android settings.gradle not found"
+            find . -name settings.gradle -type f
+            exit 1
+          fi
 
       - name: Build APK
         working-directory: android
