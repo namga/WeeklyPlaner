@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.weeklylifeplanner"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.8"
+        versionCode = 10
+        versionName = "1.0.10"
     }
 
     buildFeatures { compose = true }
