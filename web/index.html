@@ -12,7 +12,7 @@
 <body>
   <header class="hero">
     <div class="app-icon">✓</div>
-    <div><p class="eyebrow">YOUR WEEK, IN BALANCE</p><h1>Weekly Life Planner</h1><p>Randomize your week, balance your life.</p></div>
+    <div class="hero-copy"><p class="eyebrow">YOUR WEEK, IN BALANCE</p><h1>Weekly Life Planner</h1><p>Randomize your week, balance your life.</p></div><button id="openSettings" class="gear-button" aria-label="Open settings">⚙</button>
   </header>
   <main>
     <section class="welcome card">
@@ -26,12 +26,17 @@
     </section>
     <nav class="tabs" aria-label="Main navigation">
       <button class="tab active" data-tab="week">Weekly schedule</button>
-      <button class="tab" data-tab="settings">Settings</button>
+      <button class="tab" data-tab="meals">Meal ideas 🍲</button>
     </nav>
     <section id="weekView">
       <div class="calendar-toolbar"><button type="button" id="prevPeriod" aria-label="Previous period">‹</button><strong id="periodLabel">This week</strong><button type="button" id="nextPeriod" aria-label="Next period">›</button><button type="button" id="todayPeriod">Today</button><select id="quickView" aria-label="Calendar view"><option value="agenda">Day</option><option value="week">Week</option><option value="month">Month</option></select></div><div class="day-picker" id="dayPicker"></div>
       <div class="section-head"><h2 id="dayTitle">Monday</h2><span id="dayMeta">8 hours work</span></div>
       <div class="timeline" id="timeline"></div>
+    </section>
+    <section id="mealsView" hidden>
+      <div class="section-head"><div><h2>Vietnamese meal ideas 🍲</h2><span>Fresh suggestions, with different dishes across the day.</span></div><button id="refreshMeals">↻ Suggest again</button></div>
+      <div id="mealCards" class="meal-grid"></div>
+      <p class="meal-note">Suggestions use a built-in collection of common Vietnamese dishes. Please consider allergies, dietary needs and personal preferences.</p>
     </section>
     <section id="settingsView" hidden>
       <h2>Preferences</h2>
