@@ -1,8 +1,5 @@
-# UI and launcher icon fixes
-
-- Weekday selector changed to a horizontally scrolling `LazyRow` so Saturday and Sunday remain accessible on narrow screens.
-- Added Android launcher icons for mdpi through xxxhdpi and adaptive icon XML for Android 8.0+.
-- Registered `android:icon` and `android:roundIcon` in AndroidManifest.xml.
-- Preserved the existing GitHub Actions workflow; if it was absent, a build-and-upload workflow was added.
-
-Upload the contents of this ZIP to the root of your GitHub repository, commit, then run Actions → Build Android APK.
+# v1.0.3 update
+- Added public Cookidoo recipe-search links to each meal suggestion in the Web/PWA and Android app.
+- Added direct links to the official Cookidoo Vietnam portal and public Vietnamese recipe search.
+- Does not scrape or reproduce full third-party recipes; recipe pages open at their original source and may require sign-in/subscription.
+- GitHub Actions artifact and APK filename include the application version.

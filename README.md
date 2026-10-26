@@ -55,3 +55,23 @@ Note: This source package has been ZIP-integrity checked. Run the included GitHu
 - Language selector now applies Vietnamese labels in the Web/PWA and key Android navigation labels.
 - Week calendar displays all 24 hours (00:00–23:00), so late-evening and overnight schedule slots are not cut off at 15:00.
 - Android version bumped to 1.0.1; GitHub Actions uploads `Weekly-Life-Planner-v1.0.1-debug.apk` (filename is generated from `versionName`).
+
+## v1.0.2 — Shared language system
+
+- Added shared English/Vietnamese translation lookup for Android Compose screens and translated activity names, day labels, meal categories, settings, and navigation labels.
+- Saved language/theme/calendar preferences and completion state with Android SharedPreferences.
+- Web/PWA translates text nodes across the full page, including regenerated calendar and meal content, and persists language in local storage.
+- Removed Month from the Web/PWA calendar view selector; Day and Week remain available.
+- Updated APK version to 1.0.2 and made GitHub Actions artifact names use the versionName from app/build.gradle.kts.
+
+## Validation performed
+
+- JavaScript syntax check: `node --check web/app.js` passed.
+- ZIP integrity verified after packaging.
+- Android Gradle build was not run in this environment; run the GitHub Actions workflow to confirm Kotlin/Gradle compilation.
+
+## Public recipe discovery (v1.0.3)
+The Meals tab provides rotating Vietnamese meal ideas and links to public Cookidoo search pages and the official Vietnam Cookidoo portal. Recipe pages are opened on the original site; this app does not scrape, copy, or bundle third-party recipe instructions. Some pages may require an account or subscription. Always check allergies and dietary needs.
+
+## APK filename
+The GitHub Actions workflow uploads an artifact named `Weekly-Life-Planner-v1.0.3-debug-APK` containing `Weekly-Life-Planner-v1.0.3-debug.apk`. Android's intermediate build output remains `app-debug.apk`; the workflow copies and renames it for download.

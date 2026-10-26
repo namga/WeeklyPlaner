@@ -27,6 +27,10 @@ jobs:
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Build debug APK
         run: gradle assembleDebug
+      - name: Read app version
+        id: app_version
+        shell: bash
+        run: echo "version=$(grep -oE 'versionName = "[^"]+"' app/build.gradle.kts | head -n1 | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
       - name: Rename APK with app version
         shell: bash
         run: |
@@ -37,7 +41,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Weekly-Life-Planner-v1.0.1-debug-APK
+          name: Weekly-Life-Planner-v${{ steps.app_version.outputs.version }}-debug-APK
           path: artifacts/Weekly-Life-Planner-v*-debug.apk
           if-no-files-found: error
           retention-days: 14
