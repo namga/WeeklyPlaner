@@ -91,15 +91,23 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
  if(prefs.view!="Week calendar") Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){days.forEachIndexed{i,d->FilterChip(selected=day==i,onClick={day=i},label={Text(tr(prefs.language, d).take(3))})}}
  Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(if(prefs.view=="Week calendar")tr(prefs.language,"Week at a glance") else tr(prefs.language,days[day]),fontSize=22.sp,fontWeight=FontWeight.Bold);Text("${week[day].count{it.name=="Work"}*4} ${tr(prefs.language,"hours focused work")}",fontSize=12.sp,color=Color.Gray)};if(prefs.tracking)Text(if(prefs.language=="Tiếng Việt")"${week[day].count{it.id in done}}/${week[day].size} hoàn thành" else "${week[day].count{it.id in done}}/${week[day].size} done",color=accent,fontWeight=FontWeight.SemiBold)}
  if(prefs.view=="Week calendar"){
- Row(Modifier.fillMaxWidth()) {
-  // Keep the time rail outside the horizontal scroller so it remains visible while swiping across days.
+ val weekVerticalScroll = rememberScrollState()
+ Row(Modifier.fillMaxWidth().weight(1f)) {
+  // Keep the time rail fixed while the 24-hour grid scrolls vertically.
   Column(Modifier.width(54.dp)) {
    Text(tr(prefs.language, "Time"),Modifier.height(42.dp).padding(start=4.dp,top=8.dp),fontSize=10.sp,color=Color.Gray)
-   (0..23).forEach { h -> Box(Modifier.height(58.dp).fillMaxWidth(),contentAlignment=Alignment.TopStart) { Text(tr(prefs.language, "%02d:00").format(h),Modifier.padding(top=5.dp,start=2.dp),fontSize=10.sp,color=Color.Gray) } }
+   Column(Modifier.fillMaxHeight().verticalScroll(weekVerticalScroll)) {
+    (0..23).forEach { h -> Box(Modifier.height(58.dp).fillMaxWidth(),contentAlignment=Alignment.TopStart) { Text("%02d:00".format(h),Modifier.padding(top=5.dp,start=2.dp),fontSize=10.sp,color=Color.Gray) } }
+   }
   }
   Column(Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
-   Row { days.forEach { d -> Text(tr(prefs.language,d).take(3),Modifier.width(112.dp).height(42.dp).padding(6.dp),fontSize=11.sp,fontWeight=FontWeight.Bold,color=accent) } }
-   (0..23).forEach { h -> Row(Modifier.height(58.dp),verticalAlignment=Alignment.Top) { days.indices.forEach { i -> val event=week[i].firstOrNull{it.start/60==h}; Column(Modifier.width(112.dp).fillMaxHeight().padding(end=3.dp,bottom=3.dp).background(Color(0xFFE9EDF4),RoundedCornerShape(6.dp)).padding(3.dp)) { if(event!=null) Text(tr(prefs.language, "${event.emoji} ${event.name}"),fontSize=10.sp,color=accent,maxLines=3) } } } }
+   Row { days.forEachIndexed { index, d ->
+    val dayLabel = if (prefs.language == "Tiếng Việt") listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")[index] else listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[index]
+    Text(dayLabel,Modifier.width(112.dp).height(42.dp).padding(6.dp),fontSize=11.sp,fontWeight=FontWeight.Bold,color=accent)
+   } }
+   Column(Modifier.fillMaxHeight().verticalScroll(weekVerticalScroll)) {
+    (0..23).forEach { h -> Row(Modifier.height(58.dp),verticalAlignment=Alignment.Top) { days.indices.forEach { i -> val event=week[i].firstOrNull{it.start/60==h}; Column(Modifier.width(112.dp).fillMaxHeight().padding(end=3.dp,bottom=3.dp).background(Color(0xFFE9EDF4),RoundedCornerShape(6.dp)).padding(3.dp)) { if(event!=null) Text(tr(prefs.language, "${event.emoji} ${event.name}"),fontSize=10.sp,color=accent,maxLines=3) } } } }
+   }
   }
  }
  }else if(prefs.view=="Month calendar"){
