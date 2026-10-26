@@ -49,3 +49,9 @@ This is a functional starter, not a production release. App signing, automated t
 - Existing Android launcher icons and GitHub Actions debug APK workflow are retained.
 
 Note: This source package has been ZIP-integrity checked. Run the included GitHub Actions workflow to validate the Android build and produce the APK.
+
+
+## v1.0.1 update
+- Language selector now applies Vietnamese labels in the Web/PWA and key Android navigation labels.
+- Week calendar displays all 24 hours (00:00–23:00), so late-evening and overnight schedule slots are not cut off at 15:00.
+- Android version bumped to 1.0.1; GitHub Actions uploads `Weekly-Life-Planner-v1.0.1-debug.apk` (filename is generated from `versionName`).
