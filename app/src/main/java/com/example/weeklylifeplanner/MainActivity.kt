@@ -84,12 +84,19 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
  when(tab){
  0->LazyColumn(Modifier.padding(pad).fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
  item{Card(colors=CardDefaults.cardColors(containerColor=accent.copy(alpha=.12f)),shape=RoundedCornerShape(28.dp)){Column(Modifier.padding(22.dp)){Text(tr(prefs.language, "YOUR WEEK, YOUR WAY"),fontSize=11.sp,color=accent,fontWeight=FontWeight.Bold);Text(tr(prefs.language, "Make room for what matters."),fontSize=24.sp,fontWeight=FontWeight.Bold);Text(tr(prefs.language, "Plan a balanced week with space to work, rest and grow."),color=Color.DarkGray);Spacer(Modifier.height(16.dp));Button(onClick={seed++;day=0;tab=1},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)){Icon(Icons.Default.AutoAwesome,null);Spacer(Modifier.width(8.dp));Text(tr(prefs.language, "Generate a fresh week"))}}}}
- item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){StatCard(tr(prefs.language,"💼 Work"),if(prefs.weekendWork)"56h" else "40h",Modifier.weight(1f),accent);StatCard(tr(prefs.language,"🌙 Sleep"),"${prefs.sleepHours*7}h",Modifier.weight(1f),accent);StatCard(tr(prefs.language,"☑️ Done"),"${done.size}",Modifier.weight(1f),accent)}}
+ item{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.Top){
+  StatCard(tr(prefs.language,"💼 Work"),if(prefs.weekendWork)"56h" else "40h",Modifier.weight(1f).height(88.dp),accent)
+  StatCard(tr(prefs.language,"🌙 Sleep"),"${prefs.sleepHours*7}h",Modifier.weight(1f).height(88.dp),accent)
+  StatCard(if(prefs.language=="Tiếng Việt")"☑️ Đã xong" else "☑️ Done","${done.size}",Modifier.weight(1f).height(88.dp),accent)
+ }}
  item{Text(tr(prefs.language, "Coming up this week"),fontSize=19.sp,fontWeight=FontWeight.Bold)}
  items(days.indices.toList()){i->Card(onClick={day=i;tab=1},shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White)){Row(Modifier.fillMaxWidth().padding(15.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(44.dp).background(accent.copy(alpha=.12f),RoundedCornerShape(14.dp)),contentAlignment=Alignment.Center){Text(listOf("🌱","☀️","🌼","🌿","✨","🌈","💗")[i],fontSize=22.sp)};Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(tr(prefs.language, days[i]),fontWeight=FontWeight.SemiBold);Text(week[i].filter{it.start>=420&&it.start<1380}.take(2).joinToString(" · "){tr(prefs.language,it.name)},fontSize=12.sp,color=Color.Gray)};Icon(Icons.Default.ChevronRight,null,tint=accent)}}}
  }
  1->Column(Modifier.padding(pad).fillMaxSize().padding(horizontal=14.dp)){
- if(prefs.view!="Week calendar") Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){days.forEachIndexed{i,d->FilterChip(selected=day==i,onClick={day=i},label={Text(tr(prefs.language, d).take(3))})}}
+ if(prefs.view!="Week calendar") Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)){days.forEachIndexed{i,d->
+  val shortDay=if(prefs.language=="Tiếng Việt") listOf("T2","T3","T4","T5","T6","T7","CN")[i] else listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun")[i]
+  FilterChip(selected=day==i,onClick={day=i},label={Text(shortDay,fontSize=12.sp,maxLines=1,softWrap=false)})
+ }}
  Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(if(prefs.view=="Week calendar")tr(prefs.language,"Week at a glance") else tr(prefs.language,days[day]),fontSize=22.sp,fontWeight=FontWeight.Bold);Text("${week[day].count{it.name=="Work"}*4} ${tr(prefs.language,"hours focused work")}",fontSize=12.sp,color=Color.Gray)};if(prefs.tracking)Text(if(prefs.language=="Tiếng Việt")"${week[day].count{it.id in done}}/${week[day].size} hoàn thành" else "${week[day].count{it.id in done}}/${week[day].size} done",color=accent,fontWeight=FontWeight.SemiBold)}
  if(prefs.view=="Week calendar"){
  val weekVerticalScroll = rememberScrollState()
@@ -143,7 +150,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
  }
  }}
 }
-@Composable private fun StatCard(label:String,value:String,modifier:Modifier,accent:Color){Card(modifier=modifier,shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(12.dp)){Text(label,fontSize=12.sp);Text(value,fontSize=20.sp,fontWeight=FontWeight.Bold,color=accent)}}}
+@Composable private fun StatCard(label:String,value:String,modifier:Modifier,accent:Color){Card(modifier=modifier,shape=RoundedCornerShape(18.dp)){Column(Modifier.fillMaxSize().padding(horizontal=10.dp, vertical=10.dp),verticalArrangement=Arrangement.SpaceBetween){Text(label,fontSize=11.sp,maxLines=1,softWrap=false);Text(value,fontSize=20.sp,fontWeight=FontWeight.Bold,color=accent,maxLines=1)}}}
 @Composable private fun SettingSelect(title:String,options:List<Pair<String,Int>>,current:Int,language:String="English",onSelect:(Int)->Unit){var expanded by remember{mutableStateOf(false)};Row(verticalAlignment=Alignment.CenterVertically){Text(title,Modifier.weight(1f));Box{TextButton(onClick={expanded=true}){Text(tr(language,options.firstOrNull{it.second==current}?.first?:current.toString()));Icon(Icons.Default.ArrowDropDown,null)};DropdownMenu(expanded=expanded,onDismissRequest={expanded=false}){options.forEach{(label,value)->DropdownMenuItem(text={Text(tr(language,label))},onClick={ onSelect(value); expanded=false })}}}}}
 
 @Composable private fun SettingString(title:String,options:List<String>,current:String,onSelect:(String)->Unit){var expanded by remember{mutableStateOf(false)};Row(verticalAlignment=Alignment.CenterVertically){Text(title,Modifier.weight(1f));Box{TextButton(onClick={expanded=true}){Text(current);Icon(Icons.Default.ArrowDropDown,null)};DropdownMenu(expanded=expanded,onDismissRequest={expanded=false}){options.forEach{value->DropdownMenuItem(text={Text(value)},onClick={onSelect(value);expanded=false})}}}}}
